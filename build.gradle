@@ -1,0 +1,44 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+ext.javaVersion=1.8
+ext.hibernateVersion='5.2.2.Final'
+version = '0.1'
+compileJava.options.encoding = 'UTF-8'
+description = 'Hibernate Mapping Enhancer'
+sourceCompatibility = "${javaVersion}"
+targetCompatibility = "${javaVersion}"
+
+jar {
+    manifest {
+        attributes 'Project-Group': 'Hibernate Mapping Enhancer', 'Implementation-Version': version
+    }
+}
+
+dependencies {
+
+    compile (
+            "javax.validation:validation-api:1.1.0.Final",
+            "org.slf4j:slf4j-api:1.7.21",
+            "org.slf4j:jcl-over-slf4j:1.7.21",
+
+            "org.hibernate:hibernate-core:$hibernateVersion",
+    )
+
+    runtime (
+            "org.hibernate:hibernate-validator:5.0.1.Final",
+            "org.hibernate:hibernate-entitymanager:$hibernateVersion",
+    )
+
+    testCompile (
+            "junit:junit:4.12",
+            'org.postgresql:postgresql:9.4.1209'
+    )
+}
+
+configurations {
+    all*.exclude group: "commons-logging", module: "commons-logging"
+}
