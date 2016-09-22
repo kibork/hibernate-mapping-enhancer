@@ -11,13 +11,12 @@ import org.hibernate.internal.CoreLogging;
 import org.hibernate.internal.CoreMessageLogger;
 import org.hibernate.internal.util.collections.CollectionHelper;
 import org.hibernate.mapping.*;
+import org.hibernate.mapping.Collection;
 import org.hibernate.type.CustomType;
 import org.hibernate.type.EnumType;
 import org.jboss.jandex.IndexView;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -89,7 +88,7 @@ public class EnhancedMappingService implements AdditionalJaxbMappingProducer {
                         property.getPersistentClass().getTable().getName(), columnName, property.toString()
 
                 );
-                persistentClass.getTable().addIndex(index);
+                addIndex(index, persistentClass.getTable());
             } else {
                 log.infof("Skip creating index on table %s with column %s to enhance Enum property %s as it's excluded" ,
                         property.getPersistentClass().getTable().getName(), columnName, property.toString()
@@ -97,6 +96,33 @@ public class EnhancedMappingService implements AdditionalJaxbMappingProducer {
                 );
             }
         }
+    }
+
+    private static java.util.List<String> getColumnNames(final Index index) {
+        final java.util.List<String> columnNames = new ArrayList<>();
+        final Iterator<Column> columnIterator = index.getColumnIterator();
+        while (columnIterator.hasNext()) {
+            columnNames.add(columnIterator.next().getName());
+        }
+        return columnNames;
+    }
+
+    static void addIndex(final Index index, final Table table) {
+        final String newIndexName = index.getName();
+        final java.util.List<String> newIndexColumns = getColumnNames(index);
+
+        final Iterator<Index> indexIterator = table.getIndexIterator();
+        while (indexIterator.hasNext()) {
+            final Index existingIndex = indexIterator.next();
+            if (existingIndex.getName().equals(newIndexName)) {
+                return;
+            }
+            if (getColumnNames(existingIndex).equals(newIndexColumns)) {
+                return;
+            }
+        }
+
+        table.addIndex(index);
     }
 
     private String generateIndexName(final PersistentClass persistentClass, final MetadataImplementor metadata, final MetadataBuildingContext buildingContext, final ArrayList<String> columnNames) {
@@ -155,7 +181,7 @@ public class EnhancedMappingService implements AdditionalJaxbMappingProducer {
                 continue;
             }
 
-            key.getTable().addIndex(getIndex(key, columnNameList));
+            addIndex(getIndex(key, columnNameList), key.getTable());
         }
     }
 
